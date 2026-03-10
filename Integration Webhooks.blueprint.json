@@ -1,0 +1,2444 @@
+{
+    "name": "Integration Webhooks",
+    "flow": [
+        {
+            "id": 1,
+            "module": "gateway:CustomWebHook",
+            "version": 1,
+            "parameters": {
+                "hook": 2618479,
+                "maxResults": 1
+            },
+            "mapper": {},
+            "metadata": {
+                "designer": {
+                    "x": -233,
+                    "y": 32
+                },
+                "restore": {
+                    "parameters": {
+                        "hook": {
+                            "label": "arcvault-intake",
+                            "data": {
+                                "editable": "true"
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "hook",
+                        "type": "hook:gateway-webhook",
+                        "label": "Webhook",
+                        "required": true
+                    },
+                    {
+                        "name": "maxResults",
+                        "type": "number",
+                        "label": "Maximum number of results"
+                    }
+                ],
+                "interface": [
+                    {
+                        "name": "messages",
+                        "type": "array",
+                        "spec": {
+                            "type": "collection",
+                            "spec": [
+                                {
+                                    "name": "id",
+                                    "type": "text"
+                                },
+                                {
+                                    "name": "source",
+                                    "type": "text"
+                                },
+                                {
+                                    "name": "message",
+                                    "type": "text"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "id": 24,
+            "module": "builtin:BasicFeeder",
+            "version": 1,
+            "parameters": {},
+            "filter": {
+                "name": "intake",
+                "conditions": []
+            },
+            "mapper": {
+                "array": "{{1.messages}}"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 92,
+                    "y": 32
+                },
+                "restore": {
+                    "expect": {
+                        "array": {
+                            "mode": "edit"
+                        }
+                    }
+                },
+                "expect": [
+                    {
+                        "name": "array",
+                        "type": "array",
+                        "label": "Array",
+                        "mode": "edit",
+                        "spec": []
+                    }
+                ]
+            }
+        },
+        {
+            "id": 2,
+            "module": "http:MakeRequest",
+            "version": 4,
+            "parameters": {
+                "authenticationType": "noAuth",
+                "tlsType": "",
+                "proxyKeychain": ""
+            },
+            "filter": {
+                "name": "split messages",
+                "conditions": []
+            },
+            "mapper": {
+                "url": "https://api.groq.com/openai/v1/chat/completions",
+                "method": "post",
+                "headers": [
+                    {
+                        "name": "Authorization",
+                        "value": "Bearer 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"
+                    },
+                    {
+                        "name": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "contentType": "json",
+                "parseResponse": true,
+                "stopOnHttpError": true,
+                "allowRedirects": true,
+                "shareCookies": false,
+                "requestCompressedContent": true,
+                "inputMethod": "jsonString",
+                "jsonStringBodyContent": "{\r\n  \"model\": \"llama-3.3-70b-versatile\",\r\n  \"temperature\": 0.1,\r\n  \"messages\": [\r\n    {\r\n      \"role\": \"system\",\r\n      \"content\": \"You classify inbound B2B SaaS support tickets. Return ONLY valid raw JSON with no markdown and no code fences. Every key requested must be present.\"\r\n    },\r\n    {\r\n      \"role\": \"user\",\r\n      \"content\": \"Analyze this support message and return exactly one valid JSON object with all keys present and no extra text. Use this exact schema: {\\\"category\\\":\\\"Bug Report|Feature Request|Billing Issue|Technical Question|Incident/Outage\\\",\\\"priority\\\":\\\"Low|Medium|High\\\",\\\"confidence_score\\\":95,\\\"core_issue\\\":\\\"one sentence\\\",\\\"identifiers\\\":[\\\"string1\\\",\\\"string2\\\"],\\\"urgency_signal\\\":\\\"low|medium|high\\\",\\\"summary\\\":\\\"2-3 sentences\\\"}. Rules: identifiers must always be present as an array, even if empty. urgency_signal must always be present and must be one of low, medium, high. Message: {{24.message}}\"\r\n    }\r\n  ]\r\n}\r\n"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 442,
+                    "y": 39
+                },
+                "restore": {
+                    "parameters": {
+                        "authenticationType": {
+                            "label": "No authenticationUse when no credentials are required for the request."
+                        },
+                        "tlsType": {
+                            "label": "Empty"
+                        },
+                        "proxyKeychain": {
+                            "label": "Choose a key"
+                        }
+                    },
+                    "expect": {
+                        "method": {
+                            "mode": "chose",
+                            "label": "POST"
+                        },
+                        "headers": {
+                            "mode": "chose",
+                            "items": [
+                                null,
+                                null
+                            ]
+                        },
+                        "queryParameters": {
+                            "mode": "chose"
+                        },
+                        "contentType": {
+                            "label": "application/jsonEnter data in the JSON format, as a string or using a data structure."
+                        },
+                        "parseResponse": {
+                            "mode": "chose"
+                        },
+                        "stopOnHttpError": {
+                            "mode": "chose"
+                        },
+                        "allowRedirects": {
+                            "mode": "chose"
+                        },
+                        "shareCookies": {
+                            "mode": "chose"
+                        },
+                        "requestCompressedContent": {
+                            "mode": "chose"
+                        },
+                        "inputMethod": {
+                            "label": "JSON stringEnter the JSON body as a raw text string. If values contain JSON reserved characters, you must escape them manually."
+                        },
+                        "paginationType": {
+                            "label": "Empty"
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "authenticationType",
+                        "type": "select",
+                        "label": "Authentication type",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "noAuth",
+                                "apiKey",
+                                "basicAuth",
+                                "oAuth"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "tlsType",
+                        "type": "select",
+                        "label": "Transport layer security (TLS)",
+                        "validate": {
+                            "enum": [
+                                "mTls",
+                                "tls"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "proxyKeychain",
+                        "type": "keychain:proxy",
+                        "label": "Proxy"
+                    }
+                ],
+                "expect": [
+                    {
+                        "name": "url",
+                        "type": "url",
+                        "label": "URL",
+                        "required": true
+                    },
+                    {
+                        "name": "method",
+                        "type": "select",
+                        "label": "Method",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "get",
+                                "head",
+                                "post",
+                                "put",
+                                "patch",
+                                "delete",
+                                "options"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "headers",
+                        "type": "array",
+                        "label": "Headers",
+                        "spec": {
+                            "name": "value",
+                            "label": "Header",
+                            "type": "collection",
+                            "spec": [
+                                {
+                                    "name": "name",
+                                    "label": "Name",
+                                    "type": "text",
+                                    "required": true,
+                                    "validate": {
+                                        "pattern": "^[-!#$%&'*+.^_`|~0-9A-Za-z]+$"
+                                    }
+                                },
+                                {
+                                    "name": "value",
+                                    "label": "Value",
+                                    "type": "text"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "queryParameters",
+                        "type": "array",
+                        "label": "Query parameters",
+                        "spec": {
+                            "name": "value",
+                            "label": "Parameter",
+                            "type": "collection",
+                            "spec": [
+                                {
+                                    "name": "name",
+                                    "label": "Name",
+                                    "type": "text",
+                                    "required": true
+                                },
+                                {
+                                    "name": "value",
+                                    "label": "Value",
+                                    "type": "text"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "contentType",
+                        "type": "select",
+                        "label": "Body content type",
+                        "validate": {
+                            "enum": [
+                                "json",
+                                "multipart",
+                                "urlEncoded",
+                                "custom"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "parseResponse",
+                        "type": "boolean",
+                        "label": "Parse response",
+                        "required": true
+                    },
+                    {
+                        "name": "stopOnHttpError",
+                        "type": "boolean",
+                        "label": "Return error if HTTP request fails",
+                        "required": true
+                    },
+                    {
+                        "name": "timeout",
+                        "type": "uinteger",
+                        "label": "Timeout",
+                        "validate": {
+                            "min": 1,
+                            "max": 300
+                        }
+                    },
+                    {
+                        "name": "allowRedirects",
+                        "type": "boolean",
+                        "label": "Allow redirects",
+                        "required": true
+                    },
+                    {
+                        "name": "shareCookies",
+                        "type": "boolean",
+                        "label": "Share cookies with other HTTP modules",
+                        "required": true
+                    },
+                    {
+                        "name": "requestCompressedContent",
+                        "type": "boolean",
+                        "label": "Request compressed content",
+                        "required": true
+                    },
+                    {
+                        "name": "inputMethod",
+                        "type": "select",
+                        "label": "Body input method",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "dataStructure",
+                                "jsonString"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "jsonStringBodyContent",
+                        "type": "text",
+                        "label": "Body content",
+                        "required": true
+                    },
+                    {
+                        "name": "paginationType",
+                        "type": "select",
+                        "label": "Pagination type",
+                        "validate": {
+                            "enum": [
+                                "offsetBased",
+                                "pageBased",
+                                "urlBased",
+                                "tokenBased"
+                            ]
+                        }
+                    }
+                ],
+                "interface": [
+                    {
+                        "name": "data",
+                        "label": "Data",
+                        "type": "any"
+                    },
+                    {
+                        "name": "statusCode",
+                        "label": "Status Code",
+                        "type": "number"
+                    },
+                    {
+                        "name": "headers",
+                        "label": "Headers",
+                        "type": "collection",
+                        "spec": [
+                            {
+                                "name": "content-length",
+                                "label": "Content-Length",
+                                "type": "text"
+                            },
+                            {
+                                "name": "content-encoding",
+                                "label": "Content-Encoding",
+                                "type": "text"
+                            },
+                            {
+                                "name": "content-type",
+                                "label": "Content-Type",
+                                "type": "text"
+                            },
+                            {
+                                "name": "server",
+                                "label": "Server",
+                                "type": "text"
+                            },
+                            {
+                                "name": "cache-control",
+                                "label": "Cache-Control",
+                                "type": "text"
+                            },
+                            {
+                                "name": "set-cookie",
+                                "label": "Set-Cookie",
+                                "type": "array",
+                                "spec": {
+                                    "type": "text"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": 4,
+            "module": "json:ParseJSON",
+            "version": 1,
+            "parameters": {
+                "type": 332095
+            },
+            "filter": {
+                "name": "classification + enrichment",
+                "conditions": []
+            },
+            "mapper": {
+                "json": "{{2.data.choices[].message.content}}"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 440,
+                    "y": -344
+                },
+                "restore": {
+                    "parameters": {
+                        "type": {
+                            "label": "My data structure"
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "type",
+                        "type": "udt",
+                        "label": "Data structure"
+                    }
+                ],
+                "expect": [
+                    {
+                        "name": "json",
+                        "type": "text",
+                        "label": "JSON string",
+                        "required": true
+                    }
+                ],
+                "interface": [
+                    {
+                        "name": "category",
+                        "label": "Category",
+                        "help": "",
+                        "type": "text",
+                        "default": null,
+                        "required": false,
+                        "multiline": false
+                    },
+                    {
+                        "name": "priority",
+                        "label": "Priority",
+                        "help": "",
+                        "type": "text",
+                        "default": null,
+                        "required": false,
+                        "multiline": false
+                    },
+                    {
+                        "name": "confidence_score",
+                        "label": "Confidence score",
+                        "help": "",
+                        "type": "number",
+                        "default": null,
+                        "required": false
+                    }
+                ]
+            }
+        },
+        {
+            "id": 50,
+            "module": "builtin:BasicRouter",
+            "version": 1,
+            "filter": {
+                "name": "parse output",
+                "conditions": []
+            },
+            "mapper": null,
+            "metadata": {
+                "designer": {
+                    "x": 882,
+                    "y": -344
+                }
+            },
+            "routes": [
+                {
+                    "flow": [
+                        {
+                            "id": 42,
+                            "module": "airtable:ActionCreateRecord",
+                            "version": 3,
+                            "parameters": {
+                                "__IMTCONN__": 5773188
+                            },
+                            "filter": {
+                                "name": "confidence lower than 70",
+                                "conditions": [
+                                    [
+                                        {
+                                            "a": "{{4.confidence_score}}",
+                                            "o": "number:less",
+                                            "b": "70"
+                                        }
+                                    ]
+                                ]
+                            },
+                            "mapper": {
+                                "base": "appanJLelWUqupKi2",
+                                "typecast": false,
+                                "useColumnId": false,
+                                "table": "tblsgd40uEDqwg3CE",
+                                "record": {
+                                    "fldJXrIbf6LKyhQ3Q": "{{24.id}}",
+                                    "fldyJece8KjLoKN5M": "{{24.source}}",
+                                    "fldgegR6TV4tFUuGX": "{{24.message}}",
+                                    "fldFRa3vKIxDo9uNS": "{{4.category}}",
+                                    "flddXNkVsm50QZn3M": "{{4.confidence_score}}",
+                                    "fldOO921HsudHRxZe": "{{24.message}}",
+                                    "fldiqRt0BW8J0pAZc": "{{4.summary}}",
+                                    "fld4EyJAdi86vkgWz": "Human Escalation",
+                                    "fldIiqsN9jqsZKKHb": true,
+                                    "fldEdil3VElrV5M5J": "{{4.priority}}",
+                                    "fld0mViaD1BS9Kv2V": "{{4.identifiers}}",
+                                    "fldShURX6wVv3gEdC": "{{4.urgency_signal}}"
+                                }
+                            },
+                            "metadata": {
+                                "designer": {
+                                    "x": 888,
+                                    "y": 348
+                                },
+                                "restore": {
+                                    "parameters": {
+                                        "__IMTCONN__": {
+                                            "label": "My Airtable OAuth connection",
+                                            "data": {
+                                                "scoped": "true",
+                                                "connection": "airtable2"
+                                            }
+                                        }
+                                    },
+                                    "expect": {
+                                        "base": {
+                                            "label": "Vault"
+                                        },
+                                        "typecast": {
+                                            "mode": "chose"
+                                        },
+                                        "useColumnId": {
+                                            "mode": "chose"
+                                        },
+                                        "table": {
+                                            "nested": [
+                                                {
+                                                    "name": "record",
+                                                    "spec": [
+                                                        {
+                                                            "name": "fldk9H9XD0FHulbbF",
+                                                            "label": "Case Name",
+                                                            "type": "text"
+                                                        },
+                                                        {
+                                                            "name": "fldJXrIbf6LKyhQ3Q",
+                                                            "label": "Ticket ID",
+                                                            "type": "text"
+                                                        },
+                                                        {
+                                                            "name": "fldyJece8KjLoKN5M",
+                                                            "label": "Source",
+                                                            "type": "text"
+                                                        },
+                                                        {
+                                                            "name": "fldgegR6TV4tFUuGX",
+                                                            "label": "Message",
+                                                            "type": "text",
+                                                            "multiline": true
+                                                        },
+                                                        {
+                                                            "name": "fldFRa3vKIxDo9uNS",
+                                                            "label": "Category",
+                                                            "type": "select",
+                                                            "mode": "edit",
+                                                            "dynamic": true,
+                                                            "validate": false,
+                                                            "options": [
+                                                                {
+                                                                    "label": "Bug Report",
+                                                                    "value": "Bug Report"
+                                                                },
+                                                                {
+                                                                    "label": "Feature Request",
+                                                                    "value": "Feature Request"
+                                                                },
+                                                                {
+                                                                    "label": "Billing Issue",
+                                                                    "value": "Billing Issue"
+                                                                },
+                                                                {
+                                                                    "label": "Technical Question",
+                                                                    "value": "Technical Question"
+                                                                },
+                                                                {
+                                                                    "label": "Incident/Outage",
+                                                                    "value": "Incident/Outage"
+                                                                }
+                                                            ]
+                                                        },
+                                                        {
+                                                            "name": "flddXNkVsm50QZn3M",
+                                                            "label": "Confidence Score",
+                                                            "type": "number"
+                                                        },
+                                                        {
+                                                            "name": "fldOO921HsudHRxZe",
+                                                            "label": "Core Issue",
+                                                            "type": "text",
+                                                            "multiline": true
+                                                        },
+                                                        {
+                                                            "name": "fldiqRt0BW8J0pAZc",
+                                                            "label": "Summary",
+                                                            "type": "text",
+                                                            "multiline": true
+                                                        },
+                                                        {
+                                                            "name": "fld4EyJAdi86vkgWz",
+                                                            "label": "Destination Queue",
+                                                            "type": "text"
+                                                        },
+                                                        {
+                                                            "name": "fldIiqsN9jqsZKKHb",
+                                                            "label": "Escalation Flag",
+                                                            "type": "boolean"
+                                                        },
+                                                        {
+                                                            "name": "fldEdil3VElrV5M5J",
+                                                            "label": "Priority",
+                                                            "type": "text"
+                                                        },
+                                                        {
+                                                            "name": "fld0mViaD1BS9Kv2V",
+                                                            "label": "Identifiers",
+                                                            "type": "text"
+                                                        },
+                                                        {
+                                                            "name": "fldShURX6wVv3gEdC",
+                                                            "label": "Urgency Signal",
+                                                            "type": "text"
+                                                        }
+                                                    ],
+                                                    "type": "collection",
+                                                    "label": "Record"
+                                                }
+                                            ],
+                                            "label": "Support Intake"
+                                        },
+                                        "record": {
+                                            "nested": {
+                                                "fldFRa3vKIxDo9uNS": {
+                                                    "mode": "edit"
+                                                },
+                                                "fldIiqsN9jqsZKKHb": {
+                                                    "mode": "chose"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "parameters": [
+                                    {
+                                        "name": "__IMTCONN__",
+                                        "type": "account:airtable3,airtable2",
+                                        "label": "Connection",
+                                        "required": true
+                                    }
+                                ],
+                                "expect": [
+                                    {
+                                        "name": "base",
+                                        "type": "select",
+                                        "label": "Base",
+                                        "required": true
+                                    },
+                                    {
+                                        "name": "typecast",
+                                        "type": "boolean",
+                                        "label": "Smart links",
+                                        "required": true
+                                    },
+                                    {
+                                        "name": "useColumnId",
+                                        "type": "boolean",
+                                        "label": "Use Column ID",
+                                        "required": true
+                                    },
+                                    {
+                                        "name": "table",
+                                        "type": "select",
+                                        "label": "Table",
+                                        "required": true
+                                    },
+                                    {
+                                        "name": "record",
+                                        "type": "collection",
+                                        "label": "Record",
+                                        "spec": [
+                                            {
+                                                "name": "fldk9H9XD0FHulbbF",
+                                                "type": "text",
+                                                "label": "Case Name"
+                                            },
+                                            {
+                                                "name": "fldJXrIbf6LKyhQ3Q",
+                                                "type": "text",
+                                                "label": "Ticket ID"
+                                            },
+                                            {
+                                                "name": "fldyJece8KjLoKN5M",
+                                                "type": "text",
+                                                "label": "Source"
+                                            },
+                                            {
+                                                "name": "fldgegR6TV4tFUuGX",
+                                                "type": "text",
+                                                "label": "Message"
+                                            },
+                                            {
+                                                "name": "fldFRa3vKIxDo9uNS",
+                                                "type": "select",
+                                                "label": "Category",
+                                                "mode": "edit"
+                                            },
+                                            {
+                                                "name": "flddXNkVsm50QZn3M",
+                                                "type": "number",
+                                                "label": "Confidence Score"
+                                            },
+                                            {
+                                                "name": "fldOO921HsudHRxZe",
+                                                "type": "text",
+                                                "label": "Core Issue"
+                                            },
+                                            {
+                                                "name": "fldiqRt0BW8J0pAZc",
+                                                "type": "text",
+                                                "label": "Summary"
+                                            },
+                                            {
+                                                "name": "fld4EyJAdi86vkgWz",
+                                                "type": "text",
+                                                "label": "Destination Queue"
+                                            },
+                                            {
+                                                "name": "fldIiqsN9jqsZKKHb",
+                                                "type": "boolean",
+                                                "label": "Escalation Flag"
+                                            },
+                                            {
+                                                "name": "fldEdil3VElrV5M5J",
+                                                "type": "text",
+                                                "label": "Priority"
+                                            },
+                                            {
+                                                "name": "fld0mViaD1BS9Kv2V",
+                                                "type": "text",
+                                                "label": "Identifiers"
+                                            },
+                                            {
+                                                "name": "fldShURX6wVv3gEdC",
+                                                "type": "text",
+                                                "label": "Urgency Signal"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "interface": [
+                                    {
+                                        "name": "id",
+                                        "type": "text",
+                                        "label": "ID"
+                                    },
+                                    {
+                                        "name": "createdTime",
+                                        "type": "date",
+                                        "label": "Created Time"
+                                    },
+                                    {
+                                        "name": "Case Name",
+                                        "label": "Case Name",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "name": "Ticket ID",
+                                        "label": "Ticket ID",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "name": "Source",
+                                        "label": "Source",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "name": "Message",
+                                        "label": "Message",
+                                        "type": "text",
+                                        "multiline": true
+                                    },
+                                    {
+                                        "name": "Category",
+                                        "label": "Category",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "name": "Confidence Score",
+                                        "label": "Confidence Score",
+                                        "type": "number"
+                                    },
+                                    {
+                                        "name": "Core Issue",
+                                        "label": "Core Issue",
+                                        "type": "text",
+                                        "multiline": true
+                                    },
+                                    {
+                                        "name": "Summary",
+                                        "label": "Summary",
+                                        "type": "text",
+                                        "multiline": true
+                                    },
+                                    {
+                                        "name": "Destination Queue",
+                                        "label": "Destination Queue",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "name": "Escalation Flag",
+                                        "label": "Escalation Flag",
+                                        "type": "boolean"
+                                    },
+                                    {
+                                        "name": "Priority",
+                                        "label": "Priority",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "name": "Identifiers",
+                                        "label": "Identifiers",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "name": "Urgency Signal",
+                                        "label": "Urgency Signal",
+                                        "type": "text"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "flow": [
+                        {
+                            "id": 29,
+                            "module": "builtin:BasicRouter",
+                            "version": 1,
+                            "filter": {
+                                "name": "else categorize",
+                                "conditions": [
+                                    [
+                                        {
+                                            "a": "{{4.confidence_score}}",
+                                            "o": "number:greaterorequal",
+                                            "b": "70"
+                                        }
+                                    ]
+                                ]
+                            },
+                            "mapper": null,
+                            "metadata": {
+                                "designer": {
+                                    "x": 1381,
+                                    "y": -353
+                                }
+                            },
+                            "routes": [
+                                {
+                                    "flow": [
+                                        {
+                                            "id": 35,
+                                            "module": "airtable:ActionCreateRecord",
+                                            "version": 3,
+                                            "parameters": {
+                                                "__IMTCONN__": 5773188
+                                            },
+                                            "filter": {
+                                                "name": "Billing",
+                                                "conditions": [
+                                                    [
+                                                        {
+                                                            "a": "{{4.category}}",
+                                                            "o": "text:equal",
+                                                            "b": "Billing Issue"
+                                                        }
+                                                    ]
+                                                ]
+                                            },
+                                            "mapper": {
+                                                "base": "appanJLelWUqupKi2",
+                                                "typecast": false,
+                                                "useColumnId": false,
+                                                "table": "tblsgd40uEDqwg3CE",
+                                                "record": {
+                                                    "fldJXrIbf6LKyhQ3Q": "{{24.id}}",
+                                                    "fldyJece8KjLoKN5M": "{{24.source}}",
+                                                    "fldgegR6TV4tFUuGX": "{{24.message}}",
+                                                    "fldFRa3vKIxDo9uNS": "{{4.category}}",
+                                                    "flddXNkVsm50QZn3M": "{{4.confidence_score}}",
+                                                    "fldOO921HsudHRxZe": "{{24.message}}",
+                                                    "fldiqRt0BW8J0pAZc": "{{4.summary}}",
+                                                    "fld4EyJAdi86vkgWz": "Billing",
+                                                    "fldEdil3VElrV5M5J": "{{4.priority}}",
+                                                    "fld0mViaD1BS9Kv2V": "{{4.identifiers}}",
+                                                    "fldShURX6wVv3gEdC": "{{4.urgency_signal}}"
+                                                }
+                                            },
+                                            "metadata": {
+                                                "designer": {
+                                                    "x": 2053,
+                                                    "y": 294
+                                                },
+                                                "restore": {
+                                                    "parameters": {
+                                                        "__IMTCONN__": {
+                                                            "label": "My Airtable OAuth connection",
+                                                            "data": {
+                                                                "scoped": "true",
+                                                                "connection": "airtable2"
+                                                            }
+                                                        }
+                                                    },
+                                                    "expect": {
+                                                        "base": {
+                                                            "label": "Vault"
+                                                        },
+                                                        "typecast": {
+                                                            "mode": "chose"
+                                                        },
+                                                        "useColumnId": {
+                                                            "mode": "chose"
+                                                        },
+                                                        "table": {
+                                                            "nested": [
+                                                                {
+                                                                    "name": "record",
+                                                                    "spec": [
+                                                                        {
+                                                                            "name": "fldk9H9XD0FHulbbF",
+                                                                            "label": "Case Name",
+                                                                            "type": "text"
+                                                                        },
+                                                                        {
+                                                                            "name": "fldJXrIbf6LKyhQ3Q",
+                                                                            "label": "Ticket ID",
+                                                                            "type": "text"
+                                                                        },
+                                                                        {
+                                                                            "name": "fldyJece8KjLoKN5M",
+                                                                            "label": "Source",
+                                                                            "type": "text"
+                                                                        },
+                                                                        {
+                                                                            "name": "fldgegR6TV4tFUuGX",
+                                                                            "label": "Message",
+                                                                            "type": "text",
+                                                                            "multiline": true
+                                                                        },
+                                                                        {
+                                                                            "name": "fldFRa3vKIxDo9uNS",
+                                                                            "label": "Category",
+                                                                            "type": "select",
+                                                                            "mode": "edit",
+                                                                            "dynamic": true,
+                                                                            "validate": false,
+                                                                            "options": [
+                                                                                {
+                                                                                    "label": "Bug Report",
+                                                                                    "value": "Bug Report"
+                                                                                },
+                                                                                {
+                                                                                    "label": "Feature Request",
+                                                                                    "value": "Feature Request"
+                                                                                },
+                                                                                {
+                                                                                    "label": "Billing Issue",
+                                                                                    "value": "Billing Issue"
+                                                                                },
+                                                                                {
+                                                                                    "label": "Technical Question",
+                                                                                    "value": "Technical Question"
+                                                                                },
+                                                                                {
+                                                                                    "label": "Incident/Outage",
+                                                                                    "value": "Incident/Outage"
+                                                                                }
+                                                                            ]
+                                                                        },
+                                                                        {
+                                                                            "name": "flddXNkVsm50QZn3M",
+                                                                            "label": "Confidence Score",
+                                                                            "type": "number"
+                                                                        },
+                                                                        {
+                                                                            "name": "fldOO921HsudHRxZe",
+                                                                            "label": "Core Issue",
+                                                                            "type": "text",
+                                                                            "multiline": true
+                                                                        },
+                                                                        {
+                                                                            "name": "fldiqRt0BW8J0pAZc",
+                                                                            "label": "Summary",
+                                                                            "type": "text",
+                                                                            "multiline": true
+                                                                        },
+                                                                        {
+                                                                            "name": "fld4EyJAdi86vkgWz",
+                                                                            "label": "Destination Queue",
+                                                                            "type": "text"
+                                                                        },
+                                                                        {
+                                                                            "name": "fldIiqsN9jqsZKKHb",
+                                                                            "label": "Escalation Flag",
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        {
+                                                                            "name": "fldEdil3VElrV5M5J",
+                                                                            "label": "Priority",
+                                                                            "type": "text"
+                                                                        },
+                                                                        {
+                                                                            "name": "fld0mViaD1BS9Kv2V",
+                                                                            "label": "Identifiers",
+                                                                            "type": "text"
+                                                                        },
+                                                                        {
+                                                                            "name": "fldShURX6wVv3gEdC",
+                                                                            "label": "Urgency Signal",
+                                                                            "type": "text"
+                                                                        }
+                                                                    ],
+                                                                    "type": "collection",
+                                                                    "label": "Record"
+                                                                }
+                                                            ],
+                                                            "label": "Support Intake"
+                                                        },
+                                                        "record": {
+                                                            "nested": {
+                                                                "fldFRa3vKIxDo9uNS": {
+                                                                    "mode": "edit"
+                                                                },
+                                                                "fldIiqsN9jqsZKKHb": {
+                                                                    "mode": "chose"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "parameters": [
+                                                    {
+                                                        "name": "__IMTCONN__",
+                                                        "type": "account:airtable3,airtable2",
+                                                        "label": "Connection",
+                                                        "required": true
+                                                    }
+                                                ],
+                                                "expect": [
+                                                    {
+                                                        "name": "base",
+                                                        "type": "select",
+                                                        "label": "Base",
+                                                        "required": true
+                                                    },
+                                                    {
+                                                        "name": "typecast",
+                                                        "type": "boolean",
+                                                        "label": "Smart links",
+                                                        "required": true
+                                                    },
+                                                    {
+                                                        "name": "useColumnId",
+                                                        "type": "boolean",
+                                                        "label": "Use Column ID",
+                                                        "required": true
+                                                    },
+                                                    {
+                                                        "name": "table",
+                                                        "type": "select",
+                                                        "label": "Table",
+                                                        "required": true
+                                                    },
+                                                    {
+                                                        "name": "record",
+                                                        "type": "collection",
+                                                        "label": "Record",
+                                                        "spec": [
+                                                            {
+                                                                "name": "fldk9H9XD0FHulbbF",
+                                                                "type": "text",
+                                                                "label": "Case Name"
+                                                            },
+                                                            {
+                                                                "name": "fldJXrIbf6LKyhQ3Q",
+                                                                "type": "text",
+                                                                "label": "Ticket ID"
+                                                            },
+                                                            {
+                                                                "name": "fldyJece8KjLoKN5M",
+                                                                "type": "text",
+                                                                "label": "Source"
+                                                            },
+                                                            {
+                                                                "name": "fldgegR6TV4tFUuGX",
+                                                                "type": "text",
+                                                                "label": "Message"
+                                                            },
+                                                            {
+                                                                "name": "fldFRa3vKIxDo9uNS",
+                                                                "type": "select",
+                                                                "label": "Category",
+                                                                "mode": "edit"
+                                                            },
+                                                            {
+                                                                "name": "flddXNkVsm50QZn3M",
+                                                                "type": "number",
+                                                                "label": "Confidence Score"
+                                                            },
+                                                            {
+                                                                "name": "fldOO921HsudHRxZe",
+                                                                "type": "text",
+                                                                "label": "Core Issue"
+                                                            },
+                                                            {
+                                                                "name": "fldiqRt0BW8J0pAZc",
+                                                                "type": "text",
+                                                                "label": "Summary"
+                                                            },
+                                                            {
+                                                                "name": "fld4EyJAdi86vkgWz",
+                                                                "type": "text",
+                                                                "label": "Destination Queue"
+                                                            },
+                                                            {
+                                                                "name": "fldIiqsN9jqsZKKHb",
+                                                                "type": "boolean",
+                                                                "label": "Escalation Flag"
+                                                            },
+                                                            {
+                                                                "name": "fldEdil3VElrV5M5J",
+                                                                "type": "text",
+                                                                "label": "Priority"
+                                                            },
+                                                            {
+                                                                "name": "fld0mViaD1BS9Kv2V",
+                                                                "type": "text",
+                                                                "label": "Identifiers"
+                                                            },
+                                                            {
+                                                                "name": "fldShURX6wVv3gEdC",
+                                                                "type": "text",
+                                                                "label": "Urgency Signal"
+                                                            }
+                                                        ]
+                                                    }
+                                                ],
+                                                "interface": [
+                                                    {
+                                                        "name": "id",
+                                                        "type": "text",
+                                                        "label": "ID"
+                                                    },
+                                                    {
+                                                        "name": "createdTime",
+                                                        "type": "date",
+                                                        "label": "Created Time"
+                                                    },
+                                                    {
+                                                        "name": "Case Name",
+                                                        "label": "Case Name",
+                                                        "type": "text"
+                                                    },
+                                                    {
+                                                        "name": "Ticket ID",
+                                                        "label": "Ticket ID",
+                                                        "type": "text"
+                                                    },
+                                                    {
+                                                        "name": "Source",
+                                                        "label": "Source",
+                                                        "type": "text"
+                                                    },
+                                                    {
+                                                        "name": "Message",
+                                                        "label": "Message",
+                                                        "type": "text",
+                                                        "multiline": true
+                                                    },
+                                                    {
+                                                        "name": "Category",
+                                                        "label": "Category",
+                                                        "type": "text"
+                                                    },
+                                                    {
+                                                        "name": "Confidence Score",
+                                                        "label": "Confidence Score",
+                                                        "type": "number"
+                                                    },
+                                                    {
+                                                        "name": "Core Issue",
+                                                        "label": "Core Issue",
+                                                        "type": "text",
+                                                        "multiline": true
+                                                    },
+                                                    {
+                                                        "name": "Summary",
+                                                        "label": "Summary",
+                                                        "type": "text",
+                                                        "multiline": true
+                                                    },
+                                                    {
+                                                        "name": "Destination Queue",
+                                                        "label": "Destination Queue",
+                                                        "type": "text"
+                                                    },
+                                                    {
+                                                        "name": "Escalation Flag",
+                                                        "label": "Escalation Flag",
+                                                        "type": "boolean"
+                                                    },
+                                                    {
+                                                        "name": "Priority",
+                                                        "label": "Priority",
+                                                        "type": "text"
+                                                    },
+                                                    {
+                                                        "name": "Identifiers",
+                                                        "label": "Identifiers",
+                                                        "type": "text"
+                                                    },
+                                                    {
+                                                        "name": "Urgency Signal",
+                                                        "label": "Urgency Signal",
+                                                        "type": "text"
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "flow": [
+                                        {
+                                            "id": 39,
+                                            "module": "airtable:ActionCreateRecord",
+                                            "version": 3,
+                                            "parameters": {
+                                                "__IMTCONN__": 5773188
+                                            },
+                                            "filter": {
+                                                "name": "Technical Question",
+                                                "conditions": [
+                                                    [
+                                                        {
+                                                            "a": "{{4.category}}",
+                                                            "o": "text:equal",
+                                                            "b": "Technical Question"
+                                                        }
+                                                    ]
+                                                ]
+                                            },
+                                            "mapper": {
+                                                "base": "appanJLelWUqupKi2",
+                                                "typecast": false,
+                                                "useColumnId": false,
+                                                "table": "tblsgd40uEDqwg3CE",
+                                                "record": {
+                                                    "fldJXrIbf6LKyhQ3Q": "{{24.id}}",
+                                                    "fldyJece8KjLoKN5M": "{{24.source}}",
+                                                    "fldgegR6TV4tFUuGX": "{{24.message}}",
+                                                    "fldFRa3vKIxDo9uNS": "{{4.category}}",
+                                                    "flddXNkVsm50QZn3M": "{{4.confidence_score}}",
+                                                    "fldOO921HsudHRxZe": "{{4.core_issue}}",
+                                                    "fldiqRt0BW8J0pAZc": "{{4.summary}}",
+                                                    "fld4EyJAdi86vkgWz": "Technical Question",
+                                                    "fldEdil3VElrV5M5J": "{{4.priority}}",
+                                                    "fld0mViaD1BS9Kv2V": "{{4.identifiers}}",
+                                                    "fldShURX6wVv3gEdC": "{{4.urgency_signal}}"
+                                                }
+                                            },
+                                            "metadata": {
+                                                "designer": {
+                                                    "x": 1793,
+                                                    "y": 322
+                                                },
+                                                "restore": {
+                                                    "parameters": {
+                                                        "__IMTCONN__": {
+                                                            "label": "My Airtable OAuth connection",
+                                                            "data": {
+                                                                "scoped": "true",
+                                                                "connection": "airtable2"
+                                                            }
+                                                        }
+                                                    },
+                                                    "expect": {
+                                                        "base": {
+                                                            "label": "Vault"
+                                                        },
+                                                        "typecast": {
+                                                            "mode": "chose"
+                                                        },
+                                                        "useColumnId": {
+                                                            "mode": "chose"
+                                                        },
+                                                        "table": {
+                                                            "nested": [
+                                                                {
+                                                                    "name": "record",
+                                                                    "spec": [
+                                                                        {
+                                                                            "name": "fldk9H9XD0FHulbbF",
+                                                                            "label": "Case Name",
+                                                                            "type": "text"
+                                                                        },
+                                                                        {
+                                                                            "name": "fldJXrIbf6LKyhQ3Q",
+                                                                            "label": "Ticket ID",
+                                                                            "type": "text"
+                                                                        },
+                                                                        {
+                                                                            "name": "fldyJece8KjLoKN5M",
+                                                                            "label": "Source",
+                                                                            "type": "text"
+                                                                        },
+                                                                        {
+                                                                            "name": "fldgegR6TV4tFUuGX",
+                                                                            "label": "Message",
+                                                                            "type": "text",
+                                                                            "multiline": true
+                                                                        },
+                                                                        {
+                                                                            "name": "fldFRa3vKIxDo9uNS",
+                                                                            "label": "Category",
+                                                                            "type": "select",
+                                                                            "mode": "edit",
+                                                                            "dynamic": true,
+                                                                            "validate": false,
+                                                                            "options": [
+                                                                                {
+                                                                                    "label": "Bug Report",
+                                                                                    "value": "Bug Report"
+                                                                                },
+                                                                                {
+                                                                                    "label": "Feature Request",
+                                                                                    "value": "Feature Request"
+                                                                                },
+                                                                                {
+                                                                                    "label": "Billing Issue",
+                                                                                    "value": "Billing Issue"
+                                                                                },
+                                                                                {
+                                                                                    "label": "Technical Question",
+                                                                                    "value": "Technical Question"
+                                                                                },
+                                                                                {
+                                                                                    "label": "Incident/Outage",
+                                                                                    "value": "Incident/Outage"
+                                                                                }
+                                                                            ]
+                                                                        },
+                                                                        {
+                                                                            "name": "flddXNkVsm50QZn3M",
+                                                                            "label": "Confidence Score",
+                                                                            "type": "number"
+                                                                        },
+                                                                        {
+                                                                            "name": "fldOO921HsudHRxZe",
+                                                                            "label": "Core Issue",
+                                                                            "type": "text",
+                                                                            "multiline": true
+                                                                        },
+                                                                        {
+                                                                            "name": "fldiqRt0BW8J0pAZc",
+                                                                            "label": "Summary",
+                                                                            "type": "text",
+                                                                            "multiline": true
+                                                                        },
+                                                                        {
+                                                                            "name": "fld4EyJAdi86vkgWz",
+                                                                            "label": "Destination Queue",
+                                                                            "type": "text"
+                                                                        },
+                                                                        {
+                                                                            "name": "fldIiqsN9jqsZKKHb",
+                                                                            "label": "Escalation Flag",
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        {
+                                                                            "name": "fldEdil3VElrV5M5J",
+                                                                            "label": "Priority",
+                                                                            "type": "text"
+                                                                        },
+                                                                        {
+                                                                            "name": "fld0mViaD1BS9Kv2V",
+                                                                            "label": "Identifiers",
+                                                                            "type": "text"
+                                                                        },
+                                                                        {
+                                                                            "name": "fldShURX6wVv3gEdC",
+                                                                            "label": "Urgency Signal",
+                                                                            "type": "text"
+                                                                        }
+                                                                    ],
+                                                                    "type": "collection",
+                                                                    "label": "Record"
+                                                                }
+                                                            ],
+                                                            "label": "Support Intake"
+                                                        },
+                                                        "record": {
+                                                            "nested": {
+                                                                "fldFRa3vKIxDo9uNS": {
+                                                                    "mode": "edit"
+                                                                },
+                                                                "fldIiqsN9jqsZKKHb": {
+                                                                    "mode": "chose"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "parameters": [
+                                                    {
+                                                        "name": "__IMTCONN__",
+                                                        "type": "account:airtable3,airtable2",
+                                                        "label": "Connection",
+                                                        "required": true
+                                                    }
+                                                ],
+                                                "expect": [
+                                                    {
+                                                        "name": "base",
+                                                        "type": "select",
+                                                        "label": "Base",
+                                                        "required": true
+                                                    },
+                                                    {
+                                                        "name": "typecast",
+                                                        "type": "boolean",
+                                                        "label": "Smart links",
+                                                        "required": true
+                                                    },
+                                                    {
+                                                        "name": "useColumnId",
+                                                        "type": "boolean",
+                                                        "label": "Use Column ID",
+                                                        "required": true
+                                                    },
+                                                    {
+                                                        "name": "table",
+                                                        "type": "select",
+                                                        "label": "Table",
+                                                        "required": true
+                                                    },
+                                                    {
+                                                        "name": "record",
+                                                        "type": "collection",
+                                                        "label": "Record",
+                                                        "spec": [
+                                                            {
+                                                                "name": "fldk9H9XD0FHulbbF",
+                                                                "type": "text",
+                                                                "label": "Case Name"
+                                                            },
+                                                            {
+                                                                "name": "fldJXrIbf6LKyhQ3Q",
+                                                                "type": "text",
+                                                                "label": "Ticket ID"
+                                                            },
+                                                            {
+                                                                "name": "fldyJece8KjLoKN5M",
+                                                                "type": "text",
+                                                                "label": "Source"
+                                                            },
+                                                            {
+                                                                "name": "fldgegR6TV4tFUuGX",
+                                                                "type": "text",
+                                                                "label": "Message"
+                                                            },
+                                                            {
+                                                                "name": "fldFRa3vKIxDo9uNS",
+                                                                "type": "select",
+                                                                "label": "Category",
+                                                                "mode": "edit"
+                                                            },
+                                                            {
+                                                                "name": "flddXNkVsm50QZn3M",
+                                                                "type": "number",
+                                                                "label": "Confidence Score"
+                                                            },
+                                                            {
+                                                                "name": "fldOO921HsudHRxZe",
+                                                                "type": "text",
+                                                                "label": "Core Issue"
+                                                            },
+                                                            {
+                                                                "name": "fldiqRt0BW8J0pAZc",
+                                                                "type": "text",
+                                                                "label": "Summary"
+                                                            },
+                                                            {
+                                                                "name": "fld4EyJAdi86vkgWz",
+                                                                "type": "text",
+                                                                "label": "Destination Queue"
+                                                            },
+                                                            {
+                                                                "name": "fldIiqsN9jqsZKKHb",
+                                                                "type": "boolean",
+                                                                "label": "Escalation Flag"
+                                                            },
+                                                            {
+                                                                "name": "fldEdil3VElrV5M5J",
+                                                                "type": "text",
+                                                                "label": "Priority"
+                                                            },
+                                                            {
+                                                                "name": "fld0mViaD1BS9Kv2V",
+                                                                "type": "text",
+                                                                "label": "Identifiers"
+                                                            },
+                                                            {
+                                                                "name": "fldShURX6wVv3gEdC",
+                                                                "type": "text",
+                                                                "label": "Urgency Signal"
+                                                            }
+                                                        ]
+                                                    }
+                                                ],
+                                                "interface": [
+                                                    {
+                                                        "name": "id",
+                                                        "type": "text",
+                                                        "label": "ID"
+                                                    },
+                                                    {
+                                                        "name": "createdTime",
+                                                        "type": "date",
+                                                        "label": "Created Time"
+                                                    },
+                                                    {
+                                                        "name": "Case Name",
+                                                        "label": "Case Name",
+                                                        "type": "text"
+                                                    },
+                                                    {
+                                                        "name": "Ticket ID",
+                                                        "label": "Ticket ID",
+                                                        "type": "text"
+                                                    },
+                                                    {
+                                                        "name": "Source",
+                                                        "label": "Source",
+                                                        "type": "text"
+                                                    },
+                                                    {
+                                                        "name": "Message",
+                                                        "label": "Message",
+                                                        "type": "text",
+                                                        "multiline": true
+                                                    },
+                                                    {
+                                                        "name": "Category",
+                                                        "label": "Category",
+                                                        "type": "text"
+                                                    },
+                                                    {
+                                                        "name": "Confidence Score",
+                                                        "label": "Confidence Score",
+                                                        "type": "number"
+                                                    },
+                                                    {
+                                                        "name": "Core Issue",
+                                                        "label": "Core Issue",
+                                                        "type": "text",
+                                                        "multiline": true
+                                                    },
+                                                    {
+                                                        "name": "Summary",
+                                                        "label": "Summary",
+                                                        "type": "text",
+                                                        "multiline": true
+                                                    },
+                                                    {
+                                                        "name": "Destination Queue",
+                                                        "label": "Destination Queue",
+                                                        "type": "text"
+                                                    },
+                                                    {
+                                                        "name": "Escalation Flag",
+                                                        "label": "Escalation Flag",
+                                                        "type": "boolean"
+                                                    },
+                                                    {
+                                                        "name": "Priority",
+                                                        "label": "Priority",
+                                                        "type": "text"
+                                                    },
+                                                    {
+                                                        "name": "Identifiers",
+                                                        "label": "Identifiers",
+                                                        "type": "text"
+                                                    },
+                                                    {
+                                                        "name": "Urgency Signal",
+                                                        "label": "Urgency Signal",
+                                                        "type": "text"
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "flow": [
+                                        {
+                                            "id": 40,
+                                            "module": "airtable:ActionCreateRecord",
+                                            "version": 3,
+                                            "parameters": {
+                                                "__IMTCONN__": 5773188
+                                            },
+                                            "filter": {
+                                                "name": "Feature Request",
+                                                "conditions": [
+                                                    [
+                                                        {
+                                                            "a": "{{4.category}}",
+                                                            "o": "text:equal",
+                                                            "b": "Feature Request"
+                                                        }
+                                                    ]
+                                                ]
+                                            },
+                                            "mapper": {
+                                                "base": "appanJLelWUqupKi2",
+                                                "typecast": false,
+                                                "useColumnId": false,
+                                                "table": "tblsgd40uEDqwg3CE",
+                                                "record": {
+                                                    "fldJXrIbf6LKyhQ3Q": "{{24.id}}",
+                                                    "fldyJece8KjLoKN5M": "{{24.source}}",
+                                                    "fldgegR6TV4tFUuGX": "{{24.message}}",
+                                                    "fldFRa3vKIxDo9uNS": "{{4.category}}",
+                                                    "flddXNkVsm50QZn3M": "{{4.confidence_score}}",
+                                                    "fldOO921HsudHRxZe": "{{4.core_issue}}",
+                                                    "fldiqRt0BW8J0pAZc": "{{4.summary}}",
+                                                    "fld4EyJAdi86vkgWz": "Product",
+                                                    "fldEdil3VElrV5M5J": "{{4.priority}}",
+                                                    "fld0mViaD1BS9Kv2V": "{{4.identifiers}}",
+                                                    "fldShURX6wVv3gEdC": "{{4.urgency_signal}}"
+                                                }
+                                            },
+                                            "metadata": {
+                                                "designer": {
+                                                    "x": 1494,
+                                                    "y": 352
+                                                },
+                                                "restore": {
+                                                    "parameters": {
+                                                        "__IMTCONN__": {
+                                                            "label": "My Airtable OAuth connection",
+                                                            "data": {
+                                                                "scoped": "true",
+                                                                "connection": "airtable2"
+                                                            }
+                                                        }
+                                                    },
+                                                    "expect": {
+                                                        "base": {
+                                                            "label": "Vault"
+                                                        },
+                                                        "typecast": {
+                                                            "mode": "chose"
+                                                        },
+                                                        "useColumnId": {
+                                                            "mode": "chose"
+                                                        },
+                                                        "table": {
+                                                            "nested": [
+                                                                {
+                                                                    "name": "record",
+                                                                    "spec": [
+                                                                        {
+                                                                            "name": "fldk9H9XD0FHulbbF",
+                                                                            "label": "Case Name",
+                                                                            "type": "text"
+                                                                        },
+                                                                        {
+                                                                            "name": "fldJXrIbf6LKyhQ3Q",
+                                                                            "label": "Ticket ID",
+                                                                            "type": "text"
+                                                                        },
+                                                                        {
+                                                                            "name": "fldyJece8KjLoKN5M",
+                                                                            "label": "Source",
+                                                                            "type": "text"
+                                                                        },
+                                                                        {
+                                                                            "name": "fldgegR6TV4tFUuGX",
+                                                                            "label": "Message",
+                                                                            "type": "text",
+                                                                            "multiline": true
+                                                                        },
+                                                                        {
+                                                                            "name": "fldFRa3vKIxDo9uNS",
+                                                                            "label": "Category",
+                                                                            "type": "select",
+                                                                            "mode": "edit",
+                                                                            "dynamic": true,
+                                                                            "validate": false,
+                                                                            "options": [
+                                                                                {
+                                                                                    "label": "Bug Report",
+                                                                                    "value": "Bug Report"
+                                                                                },
+                                                                                {
+                                                                                    "label": "Feature Request",
+                                                                                    "value": "Feature Request"
+                                                                                },
+                                                                                {
+                                                                                    "label": "Billing Issue",
+                                                                                    "value": "Billing Issue"
+                                                                                },
+                                                                                {
+                                                                                    "label": "Technical Question",
+                                                                                    "value": "Technical Question"
+                                                                                },
+                                                                                {
+                                                                                    "label": "Incident/Outage",
+                                                                                    "value": "Incident/Outage"
+                                                                                }
+                                                                            ]
+                                                                        },
+                                                                        {
+                                                                            "name": "flddXNkVsm50QZn3M",
+                                                                            "label": "Confidence Score",
+                                                                            "type": "number"
+                                                                        },
+                                                                        {
+                                                                            "name": "fldOO921HsudHRxZe",
+                                                                            "label": "Core Issue",
+                                                                            "type": "text",
+                                                                            "multiline": true
+                                                                        },
+                                                                        {
+                                                                            "name": "fldiqRt0BW8J0pAZc",
+                                                                            "label": "Summary",
+                                                                            "type": "text",
+                                                                            "multiline": true
+                                                                        },
+                                                                        {
+                                                                            "name": "fld4EyJAdi86vkgWz",
+                                                                            "label": "Destination Queue",
+                                                                            "type": "text"
+                                                                        },
+                                                                        {
+                                                                            "name": "fldIiqsN9jqsZKKHb",
+                                                                            "label": "Escalation Flag",
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        {
+                                                                            "name": "fldEdil3VElrV5M5J",
+                                                                            "label": "Priority",
+                                                                            "type": "text"
+                                                                        },
+                                                                        {
+                                                                            "name": "fld0mViaD1BS9Kv2V",
+                                                                            "label": "Identifiers",
+                                                                            "type": "text"
+                                                                        },
+                                                                        {
+                                                                            "name": "fldShURX6wVv3gEdC",
+                                                                            "label": "Urgency Signal",
+                                                                            "type": "text"
+                                                                        }
+                                                                    ],
+                                                                    "type": "collection",
+                                                                    "label": "Record"
+                                                                }
+                                                            ],
+                                                            "label": "Support Intake"
+                                                        },
+                                                        "record": {
+                                                            "nested": {
+                                                                "fldFRa3vKIxDo9uNS": {
+                                                                    "mode": "edit"
+                                                                },
+                                                                "fldIiqsN9jqsZKKHb": {
+                                                                    "mode": "chose"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "parameters": [
+                                                    {
+                                                        "name": "__IMTCONN__",
+                                                        "type": "account:airtable3,airtable2",
+                                                        "label": "Connection",
+                                                        "required": true
+                                                    }
+                                                ],
+                                                "expect": [
+                                                    {
+                                                        "name": "base",
+                                                        "type": "select",
+                                                        "label": "Base",
+                                                        "required": true
+                                                    },
+                                                    {
+                                                        "name": "typecast",
+                                                        "type": "boolean",
+                                                        "label": "Smart links",
+                                                        "required": true
+                                                    },
+                                                    {
+                                                        "name": "useColumnId",
+                                                        "type": "boolean",
+                                                        "label": "Use Column ID",
+                                                        "required": true
+                                                    },
+                                                    {
+                                                        "name": "table",
+                                                        "type": "select",
+                                                        "label": "Table",
+                                                        "required": true
+                                                    },
+                                                    {
+                                                        "name": "record",
+                                                        "type": "collection",
+                                                        "label": "Record",
+                                                        "spec": [
+                                                            {
+                                                                "name": "fldk9H9XD0FHulbbF",
+                                                                "type": "text",
+                                                                "label": "Case Name"
+                                                            },
+                                                            {
+                                                                "name": "fldJXrIbf6LKyhQ3Q",
+                                                                "type": "text",
+                                                                "label": "Ticket ID"
+                                                            },
+                                                            {
+                                                                "name": "fldyJece8KjLoKN5M",
+                                                                "type": "text",
+                                                                "label": "Source"
+                                                            },
+                                                            {
+                                                                "name": "fldgegR6TV4tFUuGX",
+                                                                "type": "text",
+                                                                "label": "Message"
+                                                            },
+                                                            {
+                                                                "name": "fldFRa3vKIxDo9uNS",
+                                                                "type": "select",
+                                                                "label": "Category",
+                                                                "mode": "edit"
+                                                            },
+                                                            {
+                                                                "name": "flddXNkVsm50QZn3M",
+                                                                "type": "number",
+                                                                "label": "Confidence Score"
+                                                            },
+                                                            {
+                                                                "name": "fldOO921HsudHRxZe",
+                                                                "type": "text",
+                                                                "label": "Core Issue"
+                                                            },
+                                                            {
+                                                                "name": "fldiqRt0BW8J0pAZc",
+                                                                "type": "text",
+                                                                "label": "Summary"
+                                                            },
+                                                            {
+                                                                "name": "fld4EyJAdi86vkgWz",
+                                                                "type": "text",
+                                                                "label": "Destination Queue"
+                                                            },
+                                                            {
+                                                                "name": "fldIiqsN9jqsZKKHb",
+                                                                "type": "boolean",
+                                                                "label": "Escalation Flag"
+                                                            },
+                                                            {
+                                                                "name": "fldEdil3VElrV5M5J",
+                                                                "type": "text",
+                                                                "label": "Priority"
+                                                            },
+                                                            {
+                                                                "name": "fld0mViaD1BS9Kv2V",
+                                                                "type": "text",
+                                                                "label": "Identifiers"
+                                                            },
+                                                            {
+                                                                "name": "fldShURX6wVv3gEdC",
+                                                                "type": "text",
+                                                                "label": "Urgency Signal"
+                                                            }
+                                                        ]
+                                                    }
+                                                ],
+                                                "interface": [
+                                                    {
+                                                        "name": "id",
+                                                        "type": "text",
+                                                        "label": "ID"
+                                                    },
+                                                    {
+                                                        "name": "createdTime",
+                                                        "type": "date",
+                                                        "label": "Created Time"
+                                                    },
+                                                    {
+                                                        "name": "Case Name",
+                                                        "label": "Case Name",
+                                                        "type": "text"
+                                                    },
+                                                    {
+                                                        "name": "Ticket ID",
+                                                        "label": "Ticket ID",
+                                                        "type": "text"
+                                                    },
+                                                    {
+                                                        "name": "Source",
+                                                        "label": "Source",
+                                                        "type": "text"
+                                                    },
+                                                    {
+                                                        "name": "Message",
+                                                        "label": "Message",
+                                                        "type": "text",
+                                                        "multiline": true
+                                                    },
+                                                    {
+                                                        "name": "Category",
+                                                        "label": "Category",
+                                                        "type": "text"
+                                                    },
+                                                    {
+                                                        "name": "Confidence Score",
+                                                        "label": "Confidence Score",
+                                                        "type": "number"
+                                                    },
+                                                    {
+                                                        "name": "Core Issue",
+                                                        "label": "Core Issue",
+                                                        "type": "text",
+                                                        "multiline": true
+                                                    },
+                                                    {
+                                                        "name": "Summary",
+                                                        "label": "Summary",
+                                                        "type": "text",
+                                                        "multiline": true
+                                                    },
+                                                    {
+                                                        "name": "Destination Queue",
+                                                        "label": "Destination Queue",
+                                                        "type": "text"
+                                                    },
+                                                    {
+                                                        "name": "Escalation Flag",
+                                                        "label": "Escalation Flag",
+                                                        "type": "boolean"
+                                                    },
+                                                    {
+                                                        "name": "Priority",
+                                                        "label": "Priority",
+                                                        "type": "text"
+                                                    },
+                                                    {
+                                                        "name": "Identifiers",
+                                                        "label": "Identifiers",
+                                                        "type": "text"
+                                                    },
+                                                    {
+                                                        "name": "Urgency Signal",
+                                                        "label": "Urgency Signal",
+                                                        "type": "text"
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "flow": [
+                                        {
+                                            "id": 41,
+                                            "module": "airtable:ActionCreateRecord",
+                                            "version": 3,
+                                            "parameters": {
+                                                "__IMTCONN__": 5773188
+                                            },
+                                            "filter": {
+                                                "name": "Bug Report",
+                                                "conditions": [
+                                                    [
+                                                        {
+                                                            "a": "{{4.category}}",
+                                                            "o": "text:equal",
+                                                            "b": "Bug Report"
+                                                        }
+                                                    ]
+                                                ]
+                                            },
+                                            "mapper": {
+                                                "base": "appanJLelWUqupKi2",
+                                                "typecast": false,
+                                                "useColumnId": false,
+                                                "table": "tblsgd40uEDqwg3CE",
+                                                "record": {
+                                                    "fldJXrIbf6LKyhQ3Q": "{{24.id}}",
+                                                    "fldyJece8KjLoKN5M": "{{24.source}}",
+                                                    "fldgegR6TV4tFUuGX": "{{24.message}}",
+                                                    "fldFRa3vKIxDo9uNS": "{{4.category}}",
+                                                    "flddXNkVsm50QZn3M": "{{4.confidence_score}}",
+                                                    "fldOO921HsudHRxZe": "{{4.core_issue}}",
+                                                    "fldiqRt0BW8J0pAZc": "{{4.summary}}",
+                                                    "fld4EyJAdi86vkgWz": "Engineering",
+                                                    "fldEdil3VElrV5M5J": "{{4.priority}}",
+                                                    "fld0mViaD1BS9Kv2V": "{{4.identifiers}}",
+                                                    "fldShURX6wVv3gEdC": "{{4.urgency_signal}}"
+                                                }
+                                            },
+                                            "metadata": {
+                                                "designer": {
+                                                    "x": 1155,
+                                                    "y": 352
+                                                },
+                                                "restore": {
+                                                    "parameters": {
+                                                        "__IMTCONN__": {
+                                                            "label": "My Airtable OAuth connection",
+                                                            "data": {
+                                                                "scoped": "true",
+                                                                "connection": "airtable2"
+                                                            }
+                                                        }
+                                                    },
+                                                    "expect": {
+                                                        "base": {
+                                                            "label": "Vault"
+                                                        },
+                                                        "typecast": {
+                                                            "mode": "chose"
+                                                        },
+                                                        "useColumnId": {
+                                                            "mode": "chose"
+                                                        },
+                                                        "table": {
+                                                            "nested": [
+                                                                {
+                                                                    "name": "record",
+                                                                    "spec": [
+                                                                        {
+                                                                            "name": "fldk9H9XD0FHulbbF",
+                                                                            "label": "Case Name",
+                                                                            "type": "text"
+                                                                        },
+                                                                        {
+                                                                            "name": "fldJXrIbf6LKyhQ3Q",
+                                                                            "label": "Ticket ID",
+                                                                            "type": "text"
+                                                                        },
+                                                                        {
+                                                                            "name": "fldyJece8KjLoKN5M",
+                                                                            "label": "Source",
+                                                                            "type": "text"
+                                                                        },
+                                                                        {
+                                                                            "name": "fldgegR6TV4tFUuGX",
+                                                                            "label": "Message",
+                                                                            "type": "text",
+                                                                            "multiline": true
+                                                                        },
+                                                                        {
+                                                                            "name": "fldFRa3vKIxDo9uNS",
+                                                                            "label": "Category",
+                                                                            "type": "select",
+                                                                            "mode": "edit",
+                                                                            "dynamic": true,
+                                                                            "validate": false,
+                                                                            "options": [
+                                                                                {
+                                                                                    "label": "Bug Report",
+                                                                                    "value": "Bug Report"
+                                                                                },
+                                                                                {
+                                                                                    "label": "Feature Request",
+                                                                                    "value": "Feature Request"
+                                                                                },
+                                                                                {
+                                                                                    "label": "Billing Issue",
+                                                                                    "value": "Billing Issue"
+                                                                                },
+                                                                                {
+                                                                                    "label": "Technical Question",
+                                                                                    "value": "Technical Question"
+                                                                                },
+                                                                                {
+                                                                                    "label": "Incident/Outage",
+                                                                                    "value": "Incident/Outage"
+                                                                                }
+                                                                            ]
+                                                                        },
+                                                                        {
+                                                                            "name": "flddXNkVsm50QZn3M",
+                                                                            "label": "Confidence Score",
+                                                                            "type": "number"
+                                                                        },
+                                                                        {
+                                                                            "name": "fldOO921HsudHRxZe",
+                                                                            "label": "Core Issue",
+                                                                            "type": "text",
+                                                                            "multiline": true
+                                                                        },
+                                                                        {
+                                                                            "name": "fldiqRt0BW8J0pAZc",
+                                                                            "label": "Summary",
+                                                                            "type": "text",
+                                                                            "multiline": true
+                                                                        },
+                                                                        {
+                                                                            "name": "fld4EyJAdi86vkgWz",
+                                                                            "label": "Destination Queue",
+                                                                            "type": "text"
+                                                                        },
+                                                                        {
+                                                                            "name": "fldIiqsN9jqsZKKHb",
+                                                                            "label": "Escalation Flag",
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        {
+                                                                            "name": "fldEdil3VElrV5M5J",
+                                                                            "label": "Priority",
+                                                                            "type": "text"
+                                                                        },
+                                                                        {
+                                                                            "name": "fld0mViaD1BS9Kv2V",
+                                                                            "label": "Identifiers",
+                                                                            "type": "text"
+                                                                        },
+                                                                        {
+                                                                            "name": "fldShURX6wVv3gEdC",
+                                                                            "label": "Urgency Signal",
+                                                                            "type": "text"
+                                                                        }
+                                                                    ],
+                                                                    "type": "collection",
+                                                                    "label": "Record"
+                                                                }
+                                                            ],
+                                                            "label": "Support Intake"
+                                                        },
+                                                        "record": {
+                                                            "nested": {
+                                                                "fldFRa3vKIxDo9uNS": {
+                                                                    "mode": "edit"
+                                                                },
+                                                                "fldIiqsN9jqsZKKHb": {
+                                                                    "mode": "chose"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "parameters": [
+                                                    {
+                                                        "name": "__IMTCONN__",
+                                                        "type": "account:airtable3,airtable2",
+                                                        "label": "Connection",
+                                                        "required": true
+                                                    }
+                                                ],
+                                                "expect": [
+                                                    {
+                                                        "name": "base",
+                                                        "type": "select",
+                                                        "label": "Base",
+                                                        "required": true
+                                                    },
+                                                    {
+                                                        "name": "typecast",
+                                                        "type": "boolean",
+                                                        "label": "Smart links",
+                                                        "required": true
+                                                    },
+                                                    {
+                                                        "name": "useColumnId",
+                                                        "type": "boolean",
+                                                        "label": "Use Column ID",
+                                                        "required": true
+                                                    },
+                                                    {
+                                                        "name": "table",
+                                                        "type": "select",
+                                                        "label": "Table",
+                                                        "required": true
+                                                    },
+                                                    {
+                                                        "name": "record",
+                                                        "type": "collection",
+                                                        "label": "Record",
+                                                        "spec": [
+                                                            {
+                                                                "name": "fldk9H9XD0FHulbbF",
+                                                                "type": "text",
+                                                                "label": "Case Name"
+                                                            },
+                                                            {
+                                                                "name": "fldJXrIbf6LKyhQ3Q",
+                                                                "type": "text",
+                                                                "label": "Ticket ID"
+                                                            },
+                                                            {
+                                                                "name": "fldyJece8KjLoKN5M",
+                                                                "type": "text",
+                                                                "label": "Source"
+                                                            },
+                                                            {
+                                                                "name": "fldgegR6TV4tFUuGX",
+                                                                "type": "text",
+                                                                "label": "Message"
+                                                            },
+                                                            {
+                                                                "name": "fldFRa3vKIxDo9uNS",
+                                                                "type": "select",
+                                                                "label": "Category",
+                                                                "mode": "edit"
+                                                            },
+                                                            {
+                                                                "name": "flddXNkVsm50QZn3M",
+                                                                "type": "number",
+                                                                "label": "Confidence Score"
+                                                            },
+                                                            {
+                                                                "name": "fldOO921HsudHRxZe",
+                                                                "type": "text",
+                                                                "label": "Core Issue"
+                                                            },
+                                                            {
+                                                                "name": "fldiqRt0BW8J0pAZc",
+                                                                "type": "text",
+                                                                "label": "Summary"
+                                                            },
+                                                            {
+                                                                "name": "fld4EyJAdi86vkgWz",
+                                                                "type": "text",
+                                                                "label": "Destination Queue"
+                                                            },
+                                                            {
+                                                                "name": "fldIiqsN9jqsZKKHb",
+                                                                "type": "boolean",
+                                                                "label": "Escalation Flag"
+                                                            },
+                                                            {
+                                                                "name": "fldEdil3VElrV5M5J",
+                                                                "type": "text",
+                                                                "label": "Priority"
+                                                            },
+                                                            {
+                                                                "name": "fld0mViaD1BS9Kv2V",
+                                                                "type": "text",
+                                                                "label": "Identifiers"
+                                                            },
+                                                            {
+                                                                "name": "fldShURX6wVv3gEdC",
+                                                                "type": "text",
+                                                                "label": "Urgency Signal"
+                                                            }
+                                                        ]
+                                                    }
+                                                ],
+                                                "interface": [
+                                                    {
+                                                        "name": "id",
+                                                        "type": "text",
+                                                        "label": "ID"
+                                                    },
+                                                    {
+                                                        "name": "createdTime",
+                                                        "type": "date",
+                                                        "label": "Created Time"
+                                                    },
+                                                    {
+                                                        "name": "Case Name",
+                                                        "label": "Case Name",
+                                                        "type": "text"
+                                                    },
+                                                    {
+                                                        "name": "Ticket ID",
+                                                        "label": "Ticket ID",
+                                                        "type": "text"
+                                                    },
+                                                    {
+                                                        "name": "Source",
+                                                        "label": "Source",
+                                                        "type": "text"
+                                                    },
+                                                    {
+                                                        "name": "Message",
+                                                        "label": "Message",
+                                                        "type": "text",
+                                                        "multiline": true
+                                                    },
+                                                    {
+                                                        "name": "Category",
+                                                        "label": "Category",
+                                                        "type": "text"
+                                                    },
+                                                    {
+                                                        "name": "Confidence Score",
+                                                        "label": "Confidence Score",
+                                                        "type": "number"
+                                                    },
+                                                    {
+                                                        "name": "Core Issue",
+                                                        "label": "Core Issue",
+                                                        "type": "text",
+                                                        "multiline": true
+                                                    },
+                                                    {
+                                                        "name": "Summary",
+                                                        "label": "Summary",
+                                                        "type": "text",
+                                                        "multiline": true
+                                                    },
+                                                    {
+                                                        "name": "Destination Queue",
+                                                        "label": "Destination Queue",
+                                                        "type": "text"
+                                                    },
+                                                    {
+                                                        "name": "Escalation Flag",
+                                                        "label": "Escalation Flag",
+                                                        "type": "boolean"
+                                                    },
+                                                    {
+                                                        "name": "Priority",
+                                                        "label": "Priority",
+                                                        "type": "text"
+                                                    },
+                                                    {
+                                                        "name": "Identifiers",
+                                                        "label": "Identifiers",
+                                                        "type": "text"
+                                                    },
+                                                    {
+                                                        "name": "Urgency Signal",
+                                                        "label": "Urgency Signal",
+                                                        "type": "text"
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "metadata": {
+        "instant": true,
+        "version": 1,
+        "scenario": {
+            "roundtrips": 1,
+            "maxErrors": 3,
+            "autoCommit": true,
+            "autoCommitTriggerLast": true,
+            "sequential": false,
+            "slots": null,
+            "confidential": false,
+            "dataloss": false,
+            "dlq": false,
+            "freshVariables": false
+        },
+        "designer": {
+            "orphans": []
+        },
+        "zone": "eu1.make.com",
+        "notes": []
+    }
+}

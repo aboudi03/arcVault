@@ -1,0 +1,83 @@
+Thank you again for this opportunity, the task took about the amount of time you estimated, possibly slightly above that, I used Codex (chatgpt 5.2), make.com, a post trigger and groq API, I started first with gemini but hit the quota limit so i switched to groq, both did nearly the same result. The video recording is showing a different post message as I wanted to test and verify confidence<70 filter, It might've took me a bit more time because i used Airtable to store the values instead of a google sheet. I still had to correct weak suggestions from AI around mapping and routing logic to keep the workflow aligned with the business rules i.e: Bad mapping or ignoring the logic behind all this automation, I used Codex plan mode to prototype the workflow logic and validate routing decisions before implementing them in Make, and did a single value entry at first then continued to do more routing and other values inserts.
+
+
+How the pieces connect: 
+A Make.com webhook receives incoming support requests. An Iterator splits the batch into one message at a time. Each message is sent to the LLM through an HTTP request, and the model returns structured JSON with classification and enrichment fields. A Parse JSON step turns that response into usable fields. The first router checks for low-confidence cases and sends them to human escalation. If confidence is acceptable, the second router maps the category to the correct queue. Finally, Airtable stores the structured record with the category, priority, confidence score, extracted fields, destination queue, escalation flag, and summary. I intentionally kept the routing and escalation logic deterministic outside the LLM. The model is used for classification and enrichment, while routing decisions remain rule-based inside the workflow. This ensures that business rules remain transparent, testable, and easy to modify without changing the prompt or relying on the model to make operational decisions.
+
+
+Routing logic:
+I kept the routing logic simple and deterministic after the LLM step so the final destination is easy to understand and control. Bug reports go to Engineering because they usually point to something broken in the product. Feature requests go to Product because they are requests for new functionality, not defects. Billing issues go to Billing because they involve invoices, charges, or pricing questions. Technical questions go to IT/Security because they are usually setup or configuration questions, such as SSO or authentication. Incident and outage cases go to Human Escalation because they can affect multiple users and need faster review than normal tickets.
+
+Escalation logic:
+I implemented escalation primarily for low-confidence and incident-style cases. Any request with a confidence score below 70 is routed to Human Escalation because the model is signaling uncertainty and a human should review it before action is taken. I also escalate Incident/Outage cases because they often imply multiple-user impact, urgency, and higher business risk. This logic is conservative by design: the cost of escalating one extra ambiguous request is lower than the cost of missing a real outage or mishandling a low-confidence classification.
+
+What I would do differently at production scale (reliability, cost, latency):
+
+At production scale, I would separate ingestion from processing using a queue-based architecture so bursts of incoming requests do not overwhelm the workflow. A queue system such as Redis with BullMQ would allow retries, failure handling, deduplication, and horizontal scaling of worker processes as traffic grows.
+I would also store results in a production database instead of Airtable so the system becomes more reliable, easier to query, and better suited for downstream analytics.
+To improve cost and latency, I would introduce model tiering: simpler requests would be handled by a smaller or cheaper model, while uncertain or complex cases would be retried with a stronger model.
+Finally, I would improve prompt evaluation and calibration over time by collecting labeled examples of support tickets. This dataset could be used to validate classification accuracy and better calibrate confidence scores, particularly distinguishing between genuinely low-confidence classifications and high-risk cases such as outages.
+
+What I would add in a Phase 2 if I had another week:
+In a second phase, I would focus on reliability, validation, and more use cases which i have to test also, I would add monitoring, better error handling, and a lightweight human review flow for escalated records. I would also add alerting and grouping logic so that if many similar requests arrive within a short time window, the workflow can treat them as a potential incident rather than separate unrelated tickets. This would improve incident detection and help the team respond faster to broader service issues.
+
+
+
+
+
+//Prompt used in the HTTP node:
+
+{
+  "model": "llama-3.3-70b-versatile",
+  "temperature": 0.1,
+  "messages": [
+    {
+      "role": "system",
+      "content": "You classify inbound B2B SaaS support tickets. Return ONLY valid raw JSON with no markdown and no code fences."
+    },
+    {
+      "role": "user",
+      "content": "Return exactly this JSON object and nothing else: {\"category\":\"Bug Report|Feature Request|Billing Issue|Technical Question|Incident/Outage\",\"priority\":\"Low|Medium|High\",\"confidence_score\":95,\"core_issue\":\"one sentence\",\"identifiers\":[\"item1\",\"item2\"],\"urgency_signal\":\"low|medium|high\",\"summary\":\"2-3 sentences\"}. Rules: login or broken product behavior = Bug Report; requests for new capabilities = Feature Request; invoice or charge issues = Billing Issue; setup or how-to questions = Technical Question; service down or multiple users affected = Incident/Outage. Message: {{24.message}}"
+    }
+  ]
+}
+
+
+//post command
+$body = @'
+{
+  "messages": [
+    {
+      "id": "001",
+      "source": "Email",
+      "message": "Hi, I tried logging in this morning and keep getting a 403 error. My account is arcvault.io/user/jsmith. This started after your update last Tuesday."
+    },
+    {
+      "id": "002",
+      "source": "Web Form",
+      "message": "We'd love to see a bulk export feature for our audit logs. We're a compliance-heavy org and this would save us hours every month."
+    },
+    {
+      "id": "003",
+      "source": "Support Portal",
+      "message": "Invoice #8821 shows a charge of $1,240 but our contract rate is $980/month. Can someone look into this?"
+    },
+    {
+      "id": "004",
+      "source": "Email",
+      "message": "I'm not sure if this is the right place to ask, but is there a way to set up SSO with Okta? We're evaluating switching our auth provider."
+    },
+    {
+      "id": "005",
+      "source": "Web Form",
+      "message": "Your dashboard stopped loading for us around 2pm EST. Checked our end - it's definitely on yours. Multiple users affected."
+    }
+  ]
+}
+'@
+
+Invoke-RestMethod -Method Post -Uri "https://hook.eu1.make.com/q484tqv6jbtsebfp7y7kyo6qthxc3ogn" -ContentType "application/json" -Body $body
+
+
+//Airtable link 
+https://airtable.com/invite/l?inviteId=invR9dRm4CfmIeV45&inviteToken=836271b2697bec0e1e6a13f12d9669faa7e1377fcf053d536a4c43c9decb766d&utm_medium=email&utm_source=product_team&utm_content=transactional-alerts
